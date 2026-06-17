@@ -1,0 +1,42 @@
+[
+  {
+    "id": 1,
+    "titulo": "Matrix",
+    "genero": "Ciencia ficción",
+    "anio": 1999,
+    "sinopsis": "Un programador descubre que la realidad es una simulación controlada por máquinas.",
+    "imagen": "https://upload.wikimedia.org/wikipedia/en/c/c1/The_Matrix_Poster.jpg"
+  },
+  {
+    "id": 2,
+    "titulo": "El Padrino",
+    "genero": "Drama",
+    "anio": 1972,
+    "sinopsis": "La historia de la familia Corleone y su imperio dentro del crimen organizado.",
+    "imagen": "https://upload.wikimedia.org/wikipedia/en/1/1c/Godfather_ver1.jpg"
+  },
+  {
+    "id": 3,
+    "titulo": "Breaking Bad",
+    "genero": "Serie - Drama",
+    "anio": 2008,
+    "sinopsis": "Un profesor de química se convierte en fabricante de metanfetamina tras un diagnóstico de cáncer.",
+    "imagen": "https://upload.wikimedia.org/wikipedia/en/6/61/Breaking_Bad_4_poster.jpg"
+  },
+  {
+    "id": 4,
+    "titulo": "Interestelar",
+    "genero": "Ciencia ficción",
+    "anio": 2014,
+    "sinopsis": "Un grupo de astronautas viaja a través de un agujero de gusano en busca de un nuevo hogar para la humanidad.",
+    "imagen": "https://upload.wikimedia.org/wikipedia/en/b/bc/Interstellar_film_poster.jpg"
+  },
+  {
+    "id": 5,
+    "titulo": "Stranger Things",
+    "genero": "Serie - Misterio",
+    "anio": 2016,
+    "sinopsis": "Un grupo de chicos enfrenta fuerzas sobrenaturales en su pueblo durante los años 80.",
+    "imagen": "https://upload.wikimedia.org/wikipedia/en/0/02/Stranger_Things_logo.png"
+  }
+]

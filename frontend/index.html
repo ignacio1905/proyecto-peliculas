@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cartelera — TP Evaluativo JS</title>
+<style>
+  /* ============================================================
+     TOKENS DE DISEÑO
+     Paleta: inspirada en una marquesina de cine de barrio.
+     - Fondo casi negro (telón) con acentos en rojo cartelera
+       y un dorado tenue para el detalle (placas de butaca).
+  ============================================================ */
+  :root {
+    --bg: #15120f;
+    --bg-card: #1f1a16;
+    --bg-card-hover: #271f19;
+    --rojo: #c2402c;
+    --rojo-fuerte: #e0542f;
+    --dorado: #d9b25f;
+    --crema: #f3ead9;
+    --texto-tenue: #b4a896;
+    --borde: #332b23;
+    --ok: #5a8f5a;
+    --radius: 4px;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--crema);
+    font-family: 'Courier New', Courier, monospace;
+    line-height: 1.5;
+  }
+
+  /* Tipografía de cartelera para títulos: condensada y en mayúsculas,
+     simulando letras de marquesina luminosa */
+  h1, h2, h3, .marquee-font {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--crema);
+  }
+
+  /* ---------------- Encabezado ---------------- */
+  header {
+    border-bottom: 3px double var(--dorado);
+    padding: 28px 32px 22px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  header .titulo-sitio {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+
+  header .titulo-sitio h1 {
+    margin: 0;
+    font-size: 2.1rem;
+    color: var(--rojo-fuerte);
+    text-shadow: 0 0 14px rgba(224, 84, 47, 0.35);
+  }
+
+  header .subtitulo {
+    font-size: 0.78rem;
+    color: var(--texto-tenue);
+    letter-spacing: 0.08em;
+  }
+
+  nav { display: flex; gap: 10px; }
+
+  nav button {
+    background: none;
+    border: 1px solid var(--borde);
+    color: var(--texto-tenue);
+    padding: 9px 16px;
+    font-family: inherit;
+    font-size: 0.78rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    cursor: pointer;
+    border-radius: var(--radius);
+    transition: border-color 0.15s, color 0.15s;
+  }
+  nav button:hover { border-color: var(--dorado); color: var(--crema); }
+  nav button.activo {
+    border-color: var(--rojo);
+    color: var(--crema);
+    background: rgba(194, 64, 44, 0.18);
+  }
+
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 28px 32px 80px;
+  }
+
+  /* ---------------- Vistas (se muestra una a la vez) ---------------- */
+  .vista { display: none; }
+  .vista.activa { display: block; }
+
+  .vista-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .vista-header h2 { margin: 0; font-size: 1.3rem; color: var(--dorado); }
+
+  /* ---------------- Botones ---------------- */
+  button {
+    font-family: inherit;
+  }
+  .btn {
+    background: var(--rojo);
+    color: var(--crema);
+    border: none;
+    padding: 10px 18px;
+    font-size: 0.78rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+  }
+  .btn:hover { background: var(--rojo-fuerte); }
+  .btn:active { transform: scale(0.97); }
+  .btn.secundario {
+    background: none;
+    border: 1px solid var(--borde);
+    color: var(--texto-tenue);
+  }
+  .btn.secundario:hover { border-color: var(--dorado); color: var(--crema); }
+  .btn.peligro { background: #6b2a22; }
+  .btn.peligro:hover { background: #8a3527; }
+  .btn.pequeno { padding: 6px 12px; font-size: 0.7rem; }
+
+  /* ---------------- Grilla de películas (R1) ---------------- */
+  .grilla {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 18px;
+  }
+
+  .ficha {
+    background: var(--bg-card);
+    border: 1px solid var(--borde);
+    border-radius: var(--radius);
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color 0.15s, transform 0.15s, background 0.15s;
+    display: flex;
+    flex-direction: column;
+  }
+  .ficha:hover {
+    border-color: var(--rojo);
+    background: var(--bg-card-hover);
+    transform: translateY(-3px);
+  }
+
+  .ficha .poster {
+    height: 150px;
+    background: #0e0c0a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border-bottom: 1px solid var(--borde);
+  }
+  .ficha .poster img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .ficha .poster .sin-imagen {
+    color: var(--borde);
+    font-size: 2rem;
+  }
+
+  .ficha .info { padding: 14px 14px 16px; flex: 1; display: flex; flex-direction: column; gap: 6px; }
+  .ficha .info h3 { font-size: 0.95rem; margin: 0; color: var(--crema); }
+  .ficha .meta { font-size: 0.72rem; color: var(--texto-tenue); letter-spacing: 0.04em; }
+  .ficha .acciones-rapidas {
+    margin-top: auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 8px;
+  }
+
+  /* Estrella de favoritos (R3) */
+  .estrella {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    color: var(--borde);
+    line-height: 1;
+    padding: 2px 4px;
+    transition: color 0.15s, transform 0.1s;
+  }
+  .estrella:hover { transform: scale(1.15); }
+  .estrella.activa { color: var(--dorado); }
+
+  /* ---------------- Detalle ---------------- */
+  .detalle-card {
+    background: var(--bg-card);
+    border: 1px solid var(--borde);
+    border-radius: var(--radius);
+    padding: 28px;
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 28px;
+  }
+  .detalle-card .poster-grande {
+    width: 100%;
+    height: 300px;
+    background: #0e0c0a;
+    border: 1px solid var(--borde);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  .detalle-card .poster-grande img { width: 100%; height: 100%; object-fit: cover; }
+  .detalle-card .poster-grande .sin-imagen { color: var(--borde); font-size: 3rem; }
+
+  .ficha-tecnica { display: flex; flex-direction: column; gap: 14px; }
+  .ficha-tecnica h2 { font-size: 1.6rem; color: var(--rojo-fuerte); margin: 0; }
+  .ficha-tecnica .meta-detalle { color: var(--dorado); font-size: 0.85rem; letter-spacing: 0.05em; }
+  .ficha-tecnica .sinopsis { color: var(--texto-tenue); font-size: 0.92rem; max-width: 560px; }
+  .ficha-tecnica .acciones { display: flex; gap: 10px; margin-top: 8px; flex-wrap: wrap; }
+
+  @media (max-width: 600px) {
+    .detalle-card { grid-template-columns: 1fr; }
+  }
+
+  /* ---------------- Formularios (R2) ---------------- */
+  .form-card {
+    background: var(--bg-card);
+    border: 1px solid var(--borde);
+    border-radius: var(--radius);
+    padding: 24px;
+    max-width: 560px;
+  }
+  .form-card label {
+    display: block;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--texto-tenue);
+    margin-bottom: 5px;
+    margin-top: 14px;
+  }
+  .form-card input, .form-card textarea {
+    width: 100%;
+    background: #0e0c0a;
+    border: 1px solid var(--borde);
+    color: var(--crema);
+    padding: 9px 10px;
+    font-family: inherit;
+    font-size: 0.85rem;
+    border-radius: var(--radius);
+  }
+  .form-card input:focus, .form-card textarea:focus {
+    outline: none;
+    border-color: var(--dorado);
+  }
+  .form-card textarea { resize: vertical; min-height: 70px; }
+  .form-card .acciones-form { margin-top: 20px; display: flex; gap: 10px; }
+
+  /* ---------------- Mensajes de estado / vacío ---------------- */
+  .mensaje {
+    text-align: center;
+    color: var(--texto-tenue);
+    padding: 60px 20px;
+    border: 1px dashed var(--borde);
+    border-radius: var(--radius);
+    font-size: 0.9rem;
+  }
+  .mensaje.error { color: var(--rojo-fuerte); border-color: var(--rojo); }
+
+  /* Toast de confirmación */
+  #toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--bg-card);
+    border: 1px solid var(--dorado);
+    color: var(--crema);
+    padding: 12px 20px;
+    border-radius: var(--radius);
+    font-size: 0.82rem;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.25s, transform 0.25s;
+    pointer-events: none;
+    max-width: 320px;
+  }
+  #toast.visible { opacity: 1; transform: translateY(0); }
+
+  .badge-contador {
+    background: var(--rojo);
+    color: var(--crema);
+    font-size: 0.65rem;
+    border-radius: 10px;
+    padding: 1px 7px;
+    margin-left: 4px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="titulo-sitio">
+    <h1>🎬 Cartelera</h1>
+    <span class="subtitulo">catálogo &amp; favoritos</span>
+  </div>
+  <nav>
+    <button class="nav-btn activo" data-vista="vista-lista">Catálogo</button>
+    <button class="nav-btn" data-vista="vista-favoritos">Mis favoritos <span class="badge-contador" id="contador-favoritos">0</span></button>
+    <button class="nav-btn" data-vista="vista-crear">+ Agregar</button>
+  </nav>
+</header>
+
+<main>
+
+  <!-- ============== VISTA: LISTA GENERAL (R1) ============== -->
+  <section class="vista activa" id="vista-lista">
+    <div class="vista-header">
+      <h2>En cartelera</h2>
+      <button class="btn secundario pequeno" id="btn-recargar">Recargar</button>
+    </div>
+    <div id="contenedor-lista" class="grilla">
+      <p class="mensaje">Cargando catálogo...</p>
+    </div>
+  </section>
+
+  <!-- ============== VISTA: DETALLE (R1) ============== -->
+  <section class="vista" id="vista-detalle">
+    <div class="vista-header">
+      <button class="btn secundario pequeno" id="btn-volver-detalle">&larr; Volver al catálogo</button>
+    </div>
+    <div id="contenedor-detalle"></div>
+  </section>
+
+  <!-- ============== VISTA: FAVORITOS (R3) ============== -->
+  <section class="vista" id="vista-favoritos">
+    <div class="vista-header">
+      <h2>Mis favoritos</h2>
+      <button class="btn secundario pequeno" id="btn-vaciar-favoritos">Vaciar lista</button>
+    </div>
+    <div id="contenedor-favoritos" class="grilla"></div>
+  </section>
+
+  <!-- ============== VISTA: CREAR (R2) ============== -->
+  <section class="vista" id="vista-crear">
+    <div class="vista-header"><h2>Agregar título nuevo</h2></div>
+    <form class="form-card" id="form-crear">
+      <label for="c-titulo">Título</label>
+      <input type="text" id="c-titulo" required>
+
+      <label for="c-genero">Género</label>
+      <input type="text" id="c-genero" placeholder="Ej: Drama, Serie - Comedia..." required>
+
+      <label for="c-anio">Año</label>
+      <input type="number" id="c-anio" min="1900" max="2100" required>
+
+      <label for="c-imagen">URL de imagen (opcional)</label>
+      <input type="text" id="c-imagen" placeholder="https://...">
+
+      <label for="c-sinopsis">Sinopsis</label>
+      <textarea id="c-sinopsis" required></textarea>
+
+      <div class="acciones-form">
+        <button type="submit" class="btn">Crear</button>
+        <button type="button" class="btn secundario" id="btn-limpiar-crear">Limpiar</button>
+      </div>
+    </form>
+  </section>
+
+  <!-- ============== VISTA: EDITAR (R2) ============== -->
+  <section class="vista" id="vista-editar">
+    <div class="vista-header"><h2>Editar título</h2></div>
+    <form class="form-card" id="form-editar">
+      <input type="hidden" id="e-id">
+
+      <label for="e-titulo">Título</label>
+      <input type="text" id="e-titulo" required>
+
+      <label for="e-genero">Género</label>
+      <input type="text" id="e-genero" required>
+
+      <label for="e-anio">Año</label>
+      <input type="number" id="e-anio" min="1900" max="2100" required>
+
+      <label for="e-imagen">URL de imagen (opcional)</label>
+      <input type="text" id="e-imagen">
+
+      <label for="e-sinopsis">Sinopsis</label>
+      <textarea id="e-sinopsis" required></textarea>
+
+      <div class="acciones-form">
+        <button type="submit" class="btn">Guardar cambios</button>
+        <button type="button" class="btn secundario" id="btn-cancelar-editar">Cancelar</button>
+      </div>
+    </form>
+  </section>
+
+</main>
+
+<div id="toast"></div>
+
+<script>
+/* ==================================================================
+   CONFIGURACIÓN GENERAL
+   ================================================================== */
+const API_URL = "http://127.0.0.1:8000/api/";
+const CLAVE_LOCALSTORAGE = "cartelera_favoritos";
+
+/* ==================================================================
+   NAVEGACIÓN ENTRE VISTAS
+   Cada "vista" es una <section>. Mostramos una y ocultamos las demás.
+   Esto cumple con la condición de "un solo index.html" en una sola
+   ruta URL, navegando todo por JS sin recargar la página.
+   ================================================================== */
+function mostrarVista(idVista) {
+  document.querySelectorAll(".vista").forEach(v => v.classList.remove("activa"));
+  document.getElementById(idVista).classList.add("activa");
+
+  document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("activo"));
+  const botonNav = document.querySelector(`.nav-btn[data-vista="${idVista}"]`);
+  if (botonNav) botonNav.classList.add("activo");
+}
+
+document.querySelectorAll(".nav-btn").forEach(boton => {
+  boton.addEventListener("click", () => {
+    const vista = boton.dataset.vista;
+    mostrarVista(vista);
+    if (vista === "vista-lista") cargarListaPeliculas();
+    if (vista === "vista-favoritos") renderizarFavoritos();
+  });
+});
+
+function mostrarToast(texto) {
+  const toast = document.getElementById("toast");
+  toast.textContent = texto;
+  toast.classList.add("visible");
+  setTimeout(() => toast.classList.remove("visible"), 2200);
+}
+
+/* ==================================================================
+   R3: HELPERS DE LOCALSTORAGE (favoritos)
+   ================================================================== */
+function obtenerFavoritos() {
+  const datos = localStorage.getItem(CLAVE_LOCALSTORAGE);
+  return datos ? JSON.parse(datos) : [];
+}
+
+function guardarFavoritos(listaFavoritos) {
+  localStorage.setItem(CLAVE_LOCALSTORAGE, JSON.stringify(listaFavoritos));
+  actualizarContadorFavoritos();
+}
+
+function esFavorito(id) {
+  return obtenerFavoritos().some(peli => peli.id === id);
+}
+
+// Evento: agregar/quitar favoritos
+function alternarFavorito(pelicula) {
+  let favoritos = obtenerFavoritos();
+  const yaEsta = favoritos.some(p => p.id === pelicula.id);
+
+  if (yaEsta) {
+    favoritos = favoritos.filter(p => p.id !== pelicula.id);
+    mostrarToast(`"${pelicula.titulo}" se quitó de favoritos`);
+  } else {
+    favoritos.push(pelicula);
+    mostrarToast(`"${pelicula.titulo}" se agregó a favoritos`);
+  }
+
+  guardarFavoritos(favoritos);
+}
+
+function actualizarContadorFavoritos() {
+  document.getElementById("contador-favoritos").textContent = obtenerFavoritos().length;
+}
+
+document.getElementById("btn-vaciar-favoritos").addEventListener("click", () => {
+  if (confirm("¿Vaciar toda la lista de favoritos?")) {
+    guardarFavoritos([]);
+    renderizarFavoritos();
+  }
+});
+
+/* ==================================================================
+   FUNCIONES DE FETCH A LA API (R1 y R2)
+   ================================================================== */
+
+// GET /api/ -> todos los items
+async function obtenerPeliculas() {
+  const respuesta = await fetch(API_URL);
+  if (!respuesta.ok) throw new Error("No se pudo obtener el catálogo");
+  return respuesta.json();
+}
+
+// GET /api/{id} -> detalle de un item
+async function obtenerPeliculaPorId(id) {
+  const respuesta = await fetch(`${API_URL}${id}`);
+  if (!respuesta.ok) throw new Error("Película no encontrada");
+  return respuesta.json();
+}
+
+// POST /api/ -> crear
+async function crearPelicula(datosPelicula) {
+  const respuesta = await fetch(API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(datosPelicula)
+  });
+  if (!respuesta.ok) throw new Error("No se pudo crear la película");
+  return respuesta.json();
+}
+
+// PUT /api/{id} -> editar
+async function editarPelicula(id, cambios) {
+  const respuesta = await fetch(`${API_URL}${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(cambios)
+  });
+  if (!respuesta.ok) throw new Error("No se pudo editar la película");
+  return respuesta.json();
+}
+
+// DELETE /api/{id} -> eliminar
+async function eliminarPelicula(id) {
+  const respuesta = await fetch(`${API_URL}${id}`, { method: "DELETE" });
+  if (!respuesta.ok) throw new Error("No se pudo eliminar la película");
+  return respuesta.json();
+}
+
+/* ==================================================================
+   RENDERIZADO: FICHAS (reutilizable para catálogo y favoritos) (R1)
+   ================================================================== */
+function crearFicha(pelicula, { conQuitarFavorito = false } = {}) {
+  const div = document.createElement("div");
+  div.className = "ficha";
+
+  const favorita = esFavorito(pelicula.id);
+
+  div.innerHTML = `
+    <div class="poster">
+      ${pelicula.imagen
+        ? `<img src="${pelicula.imagen}" alt="Poster de ${pelicula.titulo}" onerror="this.parentElement.innerHTML='<span class=\\'sin-imagen\\'>🎞</span>'">`
+        : `<span class="sin-imagen">🎞</span>`}
+    </div>
+    <div class="info">
+      <h3>${pelicula.titulo}</h3>
+      <span class="meta">${pelicula.genero} · ${pelicula.anio}</span>
+      <div class="acciones-rapidas">
+        <button class="btn secundario pequeno btn-ver-detalle">Ver detalle</button>
+        <button class="estrella ${favorita ? "activa" : ""}" title="Agregar/quitar de favoritos">★</button>
+      </div>
+    </div>
+  `;
+
+  // Evento: selección de ítem -> ver detalle
+  div.querySelector(".btn-ver-detalle").addEventListener("click", (e) => {
+    e.stopPropagation();
+    irADetalle(pelicula.id);
+  });
+
+  // También se puede ir al detalle clickeando la ficha entera
+  div.addEventListener("click", () => irADetalle(pelicula.id));
+
+  // Evento: agregar/quitar favoritos
+  const botonEstrella = div.querySelector(".estrella");
+  botonEstrella.addEventListener("click", (e) => {
+    e.stopPropagation();
+    alternarFavorito(pelicula);
+    botonEstrella.classList.toggle("activa");
+
+    if (conQuitarFavorito && !esFavorito(pelicula.id)) {
+      renderizarFavoritos();
+    }
+  });
+
+  return div;
+}
+
+/* ==================================================================
+   VISTA: LISTA GENERAL (R1 - GET /api/)
+   ================================================================== */
+async function cargarListaPeliculas() {
+  const contenedor = document.getElementById("contenedor-lista");
+  contenedor.innerHTML = `<p class="mensaje">Cargando catálogo...</p>`;
+
+  try {
+    const peliculas = await obtenerPeliculas();
+
+    if (peliculas.length === 0) {
+      contenedor.innerHTML = `<p class="mensaje">Todavía no hay títulos cargados. Agregá el primero desde "+ Agregar".</p>`;
+      return;
+    }
+
+    contenedor.innerHTML = "";
+    peliculas.forEach(pelicula => contenedor.appendChild(crearFicha(pelicula)));
+
+  } catch (error) {
+    contenedor.innerHTML = `<p class="mensaje error">No se pudo conectar con la API. ¿Está corriendo el servidor FastAPI en http://127.0.0.1:8000?</p>`;
+    console.error(error);
+  }
+}
+
+document.getElementById("btn-recargar").addEventListener("click", cargarListaPeliculas);
+
+/* ==================================================================
+   VISTA: DETALLE (R1 - GET /api/{id})
+   ================================================================== */
+async function irADetalle(id) {
+  mostrarVista("vista-detalle");
+  const contenedor = document.getElementById("contenedor-detalle");
+  contenedor.innerHTML = `<p class="mensaje">Cargando...</p>`;
+
+  try {
+    const pelicula = await obtenerPeliculaPorId(id);
+    const favorita = esFavorito(pelicula.id);
+
+    contenedor.innerHTML = `
+      <div class="detalle-card">
+        <div class="poster-grande">
+          ${pelicula.imagen
+            ? `<img src="${pelicula.imagen}" alt="Poster de ${pelicula.titulo}" onerror="this.parentElement.innerHTML='<span class=\\'sin-imagen\\'>🎞</span>'">`
+            : `<span class="sin-imagen">🎞</span>`}
+        </div>
+        <div class="ficha-tecnica">
+          <h2>${pelicula.titulo}</h2>
+          <span class="meta-detalle">${pelicula.genero} · ${pelicula.anio}</span>
+          <p class="sinopsis">${pelicula.sinopsis}</p>
+          <div class="acciones">
+            <button class="btn" id="btn-favorito-detalle">${favorita ? "★ Quitar de favoritos" : "☆ Agregar a favoritos"}</button>
+            <button class="btn secundario" id="btn-editar-detalle">Editar</button>
+            <button class="btn peligro" id="btn-eliminar-detalle">Eliminar</button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.getElementById("btn-favorito-detalle").addEventListener("click", () => {
+      alternarFavorito(pelicula);
+      irADetalle(id); // re-renderiza para actualizar el texto del botón
+    });
+
+    document.getElementById("btn-editar-detalle").addEventListener("click", () => abrirFormularioEditar(pelicula));
+
+    document.getElementById("btn-eliminar-detalle").addEventListener("click", async () => {
+      if (!confirm(`¿Seguro que querés eliminar "${pelicula.titulo}"?`)) return;
+      try {
+        await eliminarPelicula(pelicula.id);
+        // si estaba en favoritos, también la sacamos de ahí
+        guardarFavoritos(obtenerFavoritos().filter(p => p.id !== pelicula.id));
+        mostrarToast(`"${pelicula.titulo}" fue eliminada`);
+        mostrarVista("vista-lista");
+        cargarListaPeliculas();
+      } catch (error) {
+        mostrarToast("Error al eliminar. Revisá la consola.");
+        console.error(error);
+      }
+    });
+
+  } catch (error) {
+    contenedor.innerHTML = `<p class="mensaje error">No se pudo cargar el detalle.</p>`;
+    console.error(error);
+  }
+}
+
+document.getElementById("btn-volver-detalle").addEventListener("click", () => {
+  mostrarVista("vista-lista");
+  cargarListaPeliculas();
+});
+
+/* ==================================================================
+   VISTA: FAVORITOS (R3)
+   ================================================================== */
+function renderizarFavoritos() {
+  const contenedor = document.getElementById("contenedor-favoritos");
+  const favoritos = obtenerFavoritos();
+
+  if (favoritos.length === 0) {
+    contenedor.innerHTML = `<p class="mensaje">Todavía no marcaste ningún favorito. Tocá la estrella ★ en una ficha del catálogo.</p>`;
+    return;
+  }
+
+  contenedor.innerHTML = "";
+  favoritos.forEach(pelicula => contenedor.appendChild(crearFicha(pelicula, { conQuitarFavorito: true })));
+}
+
+/* ==================================================================
+   VISTA: CREAR (R2 - POST /api/)
+   ================================================================== */
+document.getElementById("form-crear").addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const nuevaPelicula = {
+    titulo: document.getElementById("c-titulo").value.trim(),
+    genero: document.getElementById("c-genero").value.trim(),
+    anio: parseInt(document.getElementById("c-anio").value, 10),
+    sinopsis: document.getElementById("c-sinopsis").value.trim(),
+    imagen: document.getElementById("c-imagen").value.trim()
+  };
+
+  try {
+    await crearPelicula(nuevaPelicula);
+    mostrarToast(`"${nuevaPelicula.titulo}" fue agregada al catálogo`);
+    document.getElementById("form-crear").reset();
+    mostrarVista("vista-lista");
+    cargarListaPeliculas();
+  } catch (error) {
+    mostrarToast("Error al crear. Revisá la consola.");
+    console.error(error);
+  }
+});
+
+document.getElementById("btn-limpiar-crear").addEventListener("click", () => {
+  document.getElementById("form-crear").reset();
+});
+
+/* ==================================================================
+   VISTA: EDITAR (R2 - PUT /api/{id})
+   ================================================================== */
+function abrirFormularioEditar(pelicula) {
+  document.getElementById("e-id").value = pelicula.id;
+  document.getElementById("e-titulo").value = pelicula.titulo;
+  document.getElementById("e-genero").value = pelicula.genero;
+  document.getElementById("e-anio").value = pelicula.anio;
+  document.getElementById("e-imagen").value = pelicula.imagen || "";
+  document.getElementById("e-sinopsis").value = pelicula.sinopsis;
+  mostrarVista("vista-editar");
+}
+
+document.getElementById("form-editar").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const id = parseInt(document.getElementById("e-id").value, 10);
+
+  const cambios = {
+    titulo: document.getElementById("e-titulo").value.trim(),
+    genero: document.getElementById("e-genero").value.trim(),
+    anio: parseInt(document.getElementById("e-anio").value, 10),
+    sinopsis: document.getElementById("e-sinopsis").value.trim(),
+    imagen: document.getElementById("e-imagen").value.trim()
+  };
+
+  try {
+    await editarPelicula(id, cambios);
+    mostrarToast(`Cambios guardados`);
+    irADetalle(id);
+  } catch (error) {
+    mostrarToast("Error al editar. Revisá la consola.");
+    console.error(error);
+  }
+});
+
+document.getElementById("btn-cancelar-editar").addEventListener("click", () => {
+  const id = parseInt(document.getElementById("e-id").value, 10);
+  irADetalle(id);
+});
+
+/* ==================================================================
+   INICIO: al cargar la página, mostramos el catálogo
+   ================================================================== */
+actualizarContadorFavoritos();
+cargarListaPeliculas();
+</script>
+
+</body>
+</html>
